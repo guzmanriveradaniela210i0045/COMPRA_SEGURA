@@ -1,1 +1,162 @@
-Hola Mundo
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bouncing Balls</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            display: block;
+        }
+        #restoreButton, #startButton {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #startButton {
+            left: 150px;
+        }
+        #timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: #333;
+        }
+        #result {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: #333;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <button id="restoreButton">Restore Balls</button>
+    <button id="startButton">Start Game</button>
+    <div id="timer">10</div>
+    <div id="result"></div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const balls = [];
+        const colors = ['#ffb6c1', '#ff69b4', '#ff1493', '#db7093', '#c71585', '#add8e6', '#87ceeb', '#4682b4', '#1e90ff', '#0000ff'];
+        let timerInterval;
+        let timeLeft = 10;
+        let ballsRemoved = 0;
+
+        function Ball(x, y, dx, dy, radius, color) {
+            this.x = x;
+            this.y = y;
+            this.dx = dx;
+            this.dy = dy;
+            this.radius = radius;
+            this.color = color;
+
+            this.draw = function() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.closePath();
+            };
+
+            this.update = function() {
+                if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
+                    this.dx = -this.dx;
+                }
+                if (this.y + this.radius > canvas.height || this.y - this.radius < 0) {
+                    this.dy = -this.dy;
+                }
+                this.x += this.dx;
+                this.y += this.dy;
+
+                this.draw();
+            };
+        } 
+
+        function init() {
+            balls.length = 0; // Clear the balls array
+            document.getElementById('result').style.display = 'none'; // Hide the result message
+            for (let i = 0; i < 40; i++) { // Increase the number of balls to 40
+                const radius = Math.random() * 20 + 10;
+                const x = Math.random() * (canvas.width - radius * 2) + radius;
+                const y = Math.random() * (canvas.height - radius * 2) + radius;
+                const dx = (Math.random() - 0.5) * 4;
+                const dy = (Math.random() - 0.5) * 4;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                balls.push(new Ball(x, y, dx, dy, radius, color));
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            balls.forEach(ball => ball.update());
+        }
+
+        function startGame() {
+            ballsRemoved = 0;
+            timeLeft = 10;
+            document.getElementById('timer').textContent = timeLeft;
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('startButton').disabled = true;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            document.getElementById('result').textContent = `You removed ${ballsRemoved} balls!`;
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('startButton').disabled = false;
+        }
+
+        canvas.addEventListener('click', function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            for (let i = balls.length - 1; i >= 0; i--) {
+                const ball = balls[i];
+                const dist = Math.sqrt((mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2);
+                if (dist < ball.radius) {
+                    balls.splice(i, 1);
+                    ballsRemoved++;
+                    break;
+                }
+            }
+        });
+
+        document.getElementById('restoreButton').addEventListener('click', init);
+        document.getElementById('startButton').addEventListener('click', startGame);
+
+        init();
+        animate();
+    </script>
+</body>
+</html>
